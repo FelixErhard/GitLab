@@ -12,6 +12,9 @@ template:
     working_dir: terraform/
     required_version: ">= 1.6.0"
 
+  email_credentials:
+    enabled: true
+
   tags:
     - gitlab
     - git
