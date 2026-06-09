@@ -7,6 +7,10 @@
 package_update: true
 package_upgrade: false
 
+# Verzeichnisse vor write_files anlegen
+bootcmd:
+  - mkdir -p /opt/cloudstore /etc/cloudstore
+
 packages:
   - curl
   - ca-certificates
@@ -57,6 +61,7 @@ write_files:
           admin:                 true,
           skip_confirmation:     true
         )
+        u.build_namespace
         u.save!
       end
 
@@ -70,29 +75,24 @@ write_files:
           password_confirmation: '${s.password}',
           skip_confirmation:     true
         )
+        u.build_namespace
         u.save!
       end
       %{ endfor ~}
 
-      %{ if initial_group_name != "" ~}
-      # Gruppe anlegen und alle Studierenden hinzufügen
-      group = Group.find_by_full_path('${initial_group_name}')
+      %{ for group_name, members in groups ~}
+      group = Group.find_by_full_path('${group_name}')
       unless group
-        group = Group.new(
-          name: '${initial_group_name}',
-          path: '${initial_group_name}'
-        )
+        group = Group.new(name: '${group_name}', path: '${group_name}')
         group.save!
       end
-
-      %{ for s in students ~}
-      student_user = User.find_by(email: '${s.email}')
-      group.add_developer(student_user) if student_user
+      %{ for member_email in members ~}
+      member_user = User.find_by(email: '${member_email}')
+      group.add_developer(member_user) if member_user
       %{ endfor ~}
-
       admin_user = User.find_by(email: '${admin_email}')
       group.add_owner(admin_user) if admin_user
-      %{ endif ~}
+      %{ endfor ~}
 
       puts "CloudStore: User-Setup abgeschlossen."
 
@@ -107,7 +107,7 @@ write_files:
 
       [Service]
       Type=oneshot
-      ExecStartPre=/bin/bash -c 'until gitlab-rake gitlab:check SANITIZE=true > /dev/null 2>&1; do echo "Warte auf GitLab..."; sleep 15; done'
+      ExecStartPre=/bin/bash -c 'until gitlab-rails runner "puts 1" > /dev/null 2>&1; do echo "Warte auf GitLab Rails..."; sleep 20; done'
       ExecStart=/bin/bash -c 'gitlab-rails runner /opt/cloudstore/setup_users.rb'
       RemainAfterExit=yes
       StandardOutput=journal
@@ -117,9 +117,6 @@ write_files:
       WantedBy=multi-user.target
 
 runcmd:
-  # Verzeichnisse anlegen
-  - mkdir -p /opt/cloudstore /etc/cloudstore
-
   # UFW Firewall
   - ufw --force enable
   - ufw allow 22/tcp
@@ -133,8 +130,7 @@ runcmd:
 
   # Externe URL auf die Floating-IP setzen via gitlab.rb
   - |
-    MYIP=$(curl -sf http://169.254.169.254/latest/meta-data/public-ipv4 || hostname -I | awk '{print $1}')
-    sed -i "s|external_url 'http://localhost'|external_url 'http://$MYIP'|" /etc/gitlab/gitlab.rb
+    sed -i "s|external_url 'http://localhost'|external_url 'http://${floating_ip}'|" /etc/gitlab/gitlab.rb
     gitlab-ctl reconfigure
 
   # Setup-Service aktivieren und starten

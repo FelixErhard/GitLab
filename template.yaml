@@ -45,6 +45,8 @@ template:
         icon: Users
         placeholder: "dozent@dhbw-mannheim.de"
         widget: user-picker
+        multi: false
+        extract: email
 
     - name: student_emails
       type: array
@@ -58,6 +60,8 @@ template:
         order: 3
         icon: Users
         widget: user-picker
+        multi: true
+        extract: email
 
     # --- Ressourcen ---
     - name: flavor_name
@@ -89,17 +93,18 @@ template:
         placeholder: "17.0.0-ce.0"
         hint: "Paketversion aus dem offiziellen GitLab-Repository"
 
-    - name: initial_group_name
-      type: string
-      description: "Name einer GitLab-Gruppe, die automatisch angelegt wird (leer = keine Gruppe)"
+    - name: groups
+      type: object
+      description: "GitLab-Gruppen mit Mitgliedern (optional)"
       required: false
-      default: ""
+      default: {}
       x-ui:
         group: "GitLab-Optionen"
         order: 2
         icon: Users
-        placeholder: "z.B. wwi23sea"
-        hint: "Alle Studierenden werden automatisch als Member hinzugefügt"
+        widget: group-builder
+        extract: email
+        hint: "Gruppen anlegen und Studierende individuell zuweisen"
 
   outputs:
     # SYSTEM PFLICHTFELDER (Hidden)

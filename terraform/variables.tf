@@ -71,10 +71,10 @@ variable "gitlab_version" {
   default     = "17.0.0-ce.0"
 }
 
-variable "initial_group_name" {
-  type        = string
-  description = "Name der GitLab-Gruppe, die automatisch angelegt wird (leer = keine Gruppe)"
-  default     = ""
+variable "groups" {
+  type        = map(list(string))
+  description = "GitLab-Gruppen mit Mitgliedern: { gruppenname = [email1, email2, ...] }"
+  default     = {}
 }
 
 # ==============================================================================

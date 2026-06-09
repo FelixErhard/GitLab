@@ -121,10 +121,13 @@ resource "openstack_compute_instance_v2" "gitlab_server" {
     name = var.network_name
   }
 
+  depends_on = [openstack_networking_floatingip_v2.gitlab_fip]
+
   user_data = templatefile("${path.module}/cloud-init.yaml", {
     app_name           = var.app_name
     gitlab_version     = var.gitlab_version
-    initial_group_name = var.initial_group_name
+    floating_ip        = openstack_networking_floatingip_v2.gitlab_fip[0].address
+    groups             = var.groups
 
     admin_username = replace(replace(lower(var.admin_email), "@", "_"), ".", "_")
     admin_email    = var.admin_email

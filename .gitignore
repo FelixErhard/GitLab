@@ -8,3 +8,4 @@ coverage.xml
 *.tfstate.*
 *.tfvars
 .deployment-*/
+.claude/
