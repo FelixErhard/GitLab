@@ -60,8 +60,8 @@ variable "flavor_name" {
   description = "OpenStack Flavor (VM-Größe)"
   default     = "gp1.large"
   validation {
-    condition     = contains(["gp1.large", "gp1.xlarge"], var.flavor_name)
-    error_message = "flavor_name: Muss 'gp1.large' oder 'gp1.xlarge' sein."
+    condition     = contains(["gp1.small", "gp1.medium", "gp1.large"], var.flavor_name)
+    error_message = "flavor_name: Muss 'gp1.small', 'gp1.medium' oder 'gp1.large' sein."
   }
 }
 

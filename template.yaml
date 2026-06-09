@@ -66,19 +66,16 @@ template:
     # --- Ressourcen ---
     - name: flavor_name
       type: selection
-      description: "VM-Größe (GitLab benötigt mindestens 4 GB RAM)"
+      description: "Ressourcen (Quota)"
       required: true
-      default: "gp1.large"
       options:
-        - label: "Large (4 vCPU, 8 GB RAM) — Empfohlen"
+        - label: "Small (1 CPU, 2GB RAM)"
+          value: "gp1.small"
+        - label: "Medium (2 CPU, 4GB RAM)"
+          value: "gp1.medium"
+        - label: "Large (4 CPU, 8GB RAM)"
           value: "gp1.large"
-        - label: "XLarge (8 vCPU, 16 GB RAM)"
-          value: "gp1.xlarge"
-      x-ui:
-        group: "Ressourcen"
-        order: 1
-        icon: Cpu
-        warning: "Für den produktiven Betrieb wird Large oder größer empfohlen"
+      default: "gp1.large"
 
     # --- GitLab-Optionen ---
     - name: gitlab_version
