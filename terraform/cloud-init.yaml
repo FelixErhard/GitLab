@@ -1,0 +1,148 @@
+#cloud-config
+
+# GitLab CE Server Setup
+# Installiert GitLab CE, konfiguriert die externe URL und legt
+# Dozenten- sowie Studierenden-Accounts per gitlab-rails runner an.
+
+package_update: true
+package_upgrade: false
+
+packages:
+  - curl
+  - ca-certificates
+  - tzdata
+  - postfix
+  - ufw
+
+write_files:
+  # Enthält alle Credentials als Referenz für den Admin
+  - path: /etc/cloudstore/gitlab_info.txt
+    permissions: '0600'
+    content: |
+      CloudStore GitLab CE Deployment
+      ================================
+      App:       ${app_name}
+      Version:   ${gitlab_version}
+
+      Admin
+      -----
+      Username:  ${admin_username}
+      Email:     ${admin_email}
+      Password:  ${admin_password}
+
+      Studierende
+      -----------
+      %{ for s in students ~}
+      ${s.username} / ${s.email} / ${s.password}
+      %{ endfor ~}
+
+  # Wartet bis GitLab bereit ist, dann legt es alle User an
+  - path: /opt/cloudstore/setup_users.rb
+    permissions: '0700'
+    content: |
+      # Admin-Account anlegen / sichern
+      admin = User.find_by(username: 'root')
+      admin.password = '${admin_password}'
+      admin.password_confirmation = '${admin_password}'
+      admin.save!
+
+      # Dozenten-Account
+      unless User.find_by(email: '${admin_email}')
+        u = User.new(
+          name:                  '${admin_username}',
+          username:              '${admin_username}',
+          email:                 '${admin_email}',
+          password:              '${admin_password}',
+          password_confirmation: '${admin_password}',
+          admin:                 true,
+          skip_confirmation:     true
+        )
+        u.save!
+      end
+
+      %{ for s in students ~}
+      unless User.find_by(email: '${s.email}')
+        u = User.new(
+          name:                  '${s.username}',
+          username:              '${s.username}',
+          email:                 '${s.email}',
+          password:              '${s.password}',
+          password_confirmation: '${s.password}',
+          skip_confirmation:     true
+        )
+        u.save!
+      end
+      %{ endfor ~}
+
+      %{ if initial_group_name != "" ~}
+      # Gruppe anlegen und alle Studierenden hinzufügen
+      group = Group.find_by_full_path('${initial_group_name}')
+      unless group
+        group = Group.new(
+          name: '${initial_group_name}',
+          path: '${initial_group_name}'
+        )
+        group.save!
+      end
+
+      %{ for s in students ~}
+      student_user = User.find_by(email: '${s.email}')
+      group.add_developer(student_user) if student_user
+      %{ endfor ~}
+
+      admin_user = User.find_by(email: '${admin_email}')
+      group.add_owner(admin_user) if admin_user
+      %{ endif ~}
+
+      puts "CloudStore: User-Setup abgeschlossen."
+
+  # Systemd-Unit: wartet auf GitLab, führt dann setup_users.rb aus
+  - path: /etc/systemd/system/cloudstore-gitlab-setup.service
+    permissions: '0644'
+    content: |
+      [Unit]
+      Description=CloudStore GitLab User Setup
+      After=gitlab-runsvdir.service
+      Requires=gitlab-runsvdir.service
+
+      [Service]
+      Type=oneshot
+      ExecStartPre=/bin/bash -c 'until gitlab-rake gitlab:check SANITIZE=true > /dev/null 2>&1; do echo "Warte auf GitLab..."; sleep 15; done'
+      ExecStart=/bin/bash -c 'gitlab-rails runner /opt/cloudstore/setup_users.rb'
+      RemainAfterExit=yes
+      StandardOutput=journal
+      StandardError=journal
+
+      [Install]
+      WantedBy=multi-user.target
+
+runcmd:
+  # Verzeichnisse anlegen
+  - mkdir -p /opt/cloudstore /etc/cloudstore
+
+  # UFW Firewall
+  - ufw --force enable
+  - ufw allow 22/tcp
+  - ufw allow 80/tcp
+
+  # GitLab CE Repository einrichten
+  - curl -sS https://packages.gitlab.com/install/repositories/gitlab/gitlab-ce/script.deb.sh | bash
+
+  # GitLab CE installieren (externe URL auf localhost, wird später mit IP überschrieben)
+  - EXTERNAL_URL="http://localhost" apt-get install -y gitlab-ce=${gitlab_version}
+
+  # Externe URL auf die Floating-IP setzen via gitlab.rb
+  - |
+    MYIP=$(curl -sf http://169.254.169.254/latest/meta-data/public-ipv4 || hostname -I | awk '{print $1}')
+    sed -i "s|external_url 'http://localhost'|external_url 'http://$MYIP'|" /etc/gitlab/gitlab.rb
+    gitlab-ctl reconfigure
+
+  # Setup-Service aktivieren und starten
+  - systemctl daemon-reload
+  - systemctl enable cloudstore-gitlab-setup.service
+  - systemctl start cloudstore-gitlab-setup.service
+
+final_message: |
+  GitLab CE ${gitlab_version} wurde installiert.
+  App: ${app_name}
+  Alle User-Setups laufen via cloudstore-gitlab-setup.service.
