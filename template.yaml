@@ -85,7 +85,7 @@ template:
       type: string
       description: "GitLab CE Version (z.B. 17.0.0-ce.0)"
       required: false
-      default: "17.0.0-ce.0"
+      default: "17.0.8-ce.0"
       x-ui:
         group: "GitLab-Optionen"
         order: 1

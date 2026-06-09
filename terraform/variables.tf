@@ -68,7 +68,7 @@ variable "flavor_name" {
 variable "gitlab_version" {
   type        = string
   description = "GitLab CE Paketversion (z.B. 17.0.0-ce.0)"
-  default     = "17.0.0-ce.0"
+  default     = "17.0.8-ce.0"
 }
 
 variable "groups" {
