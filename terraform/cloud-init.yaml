@@ -42,7 +42,7 @@ write_files:
 
   # Wartet bis GitLab bereit ist, dann legt es alle User an
   - path: /opt/cloudstore/setup_users.rb
-    permissions: '0700'
+    permissions: '0755'
     content: |
       # Admin-Account anlegen / sichern
       admin = User.find_by(username: 'root')
