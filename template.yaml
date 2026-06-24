@@ -27,89 +27,92 @@ tags:
   - education
 
 parameters:
+  general:
   # --- Allgemein ---
-  - name: app_name
-    type: string
-    description: "Name der GitLab-Instanz (z.B. wwi23sea-gitlab)"
-    required: true
-    validation:
-      pattern: "^[a-z0-9-]{3,20}$"
-    x-ui:
-      group: "Allgemein"
-      order: 1
-      icon: Server
-      placeholder: "z.B. wwi23sea-gitlab"
-      hint: "Nur Kleinbuchstaben, Zahlen und Bindestriche (3-20 Zeichen)"
+    - name: app_name
+      type: string
+      description: "Name der GitLab-Instanz (z.B. wwi23sea-gitlab)"
+      required: true
+      validation:
+        pattern: "^[a-z0-9-]{3,20}$"
+      x-ui:
+        group: "Allgemein"
+        order: 1
+        icon: Server
+        placeholder: "z.B. wwi23sea-gitlab"
+        hint: "Nur Kleinbuchstaben, Zahlen und Bindestriche (3-20 Zeichen)"
 
-  - name: admin_email
-    type: string
-    description: "E-Mail des Dozenten (erhält GitLab-Root-Admin-Rechte)"
-    required: true
-    validation:
-      pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
-    x-ui:
-      group: "Allgemein"
-      order: 2
-      icon: Users
-      placeholder: "dozent@dhbw-mannheim.de"
-      widget: user-picker
-      multi: false
-      extract: email
+    - name: admin_email
+      type: string
+      description: "E-Mail des Dozenten (erhält GitLab-Root-Admin-Rechte)"
+      required: true
+      validation:
+        pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+      x-ui:
+        group: "Allgemein"
+        order: 2
+        icon: Users
+        placeholder: "dozent@dhbw-mannheim.de"
+        widget: user-picker
+        multi: false
+        extract: email
 
-  - name: student_emails
-    type: array
-    description: "E-Mails der Studierenden (werden als GitLab-User angelegt)"
-    required: true
-    validation:
-      min_items: 1
-      max_items: 30
-    x-ui:
-      group: "Allgemein"
-      order: 3
-      icon: Users
-      widget: user-picker
-      multi: true
-      extract: email
-
+    - name: student_emails
+      type: array
+      description: "E-Mails der Studierenden (werden als GitLab-User angelegt)"
+      required: true
+      validation:
+        min_items: 1
+        max_items: 30
+      x-ui:
+        group: "Allgemein"
+        order: 3
+        icon: Users
+        widget: user-picker
+        multi: true
+        extract: email
+        
+    - name: groups
+      type: object
+      description: "GitLab-Gruppen mit Mitgliedern (optional)"
+      required: false
+      default: {}
+      x-ui:
+        group: "GitLab-Optionen"
+        order: 2
+        icon: Users
+        widget: group-builder
+        extract: email
+        hint: "Gruppen anlegen und Studierende individuell zuweisen"
+  specific:
   # --- Ressourcen ---
-  - name: flavor_name
-    type: selection
-    description: "Ressourcen (Quota)"
-    required: true
-    options:
-      - label: "Small (1 CPU, 2GB RAM)"
-        value: "gp1.small"
-      - label: "Medium (2 CPU, 4GB RAM)"
-        value: "gp1.medium"
-      - label: "Large (4 CPU, 8GB RAM)"
-        value: "gp1.large"
-    default: "gp1.large"
+    - name: flavor_name
+      type: selection
+      description: "Ressourcen (Quota)"
+      required: true
+      options:
+        - label: "Small (1 CPU, 2GB RAM)"
+          value: "gp1.small"
+        - label: "Medium (2 CPU, 4GB RAM)"
+          value: "gp1.medium"
+        - label: "Large (4 CPU, 8GB RAM)"
+          value: "gp1.large"
+      default: "gp1.large"
 
-  # --- GitLab-Optionen ---
-  - name: gitlab_version
-    type: string
-    description: "GitLab CE Version (z.B. 17.0.0-ce.0)"
-    required: false
-    default: "17.0.8-ce.0"
-    x-ui:
-      group: "GitLab-Optionen"
-      order: 1
-      icon: Server
-      placeholder: "17.0.0-ce.0"
-      hint: "Paketversion aus dem offiziellen GitLab-Repository"
+    # --- GitLab-Optionen ---
+    - name: gitlab_version
+      type: string
+      description: "GitLab CE Version (z.B. 17.0.0-ce.0)"
+      required: false
+      default: "17.0.8-ce.0"
+      x-ui:
+        group: "GitLab-Optionen"
+        order: 1
+        icon: Server
+        placeholder: "17.0.0-ce.0"
+        hint: "Paketversion aus dem offiziellen GitLab-Repository"
 
-  - name: groups
-    type: object
-    description: "GitLab-Gruppen mit Mitgliedern (optional)"
-    required: false
-    default: {}
-    x-ui:
-      group: "GitLab-Optionen"
-      order: 2
-      icon: Users
-      widget: group-builder
-      extract: email
-      hint: "Gruppen anlegen und Studierende individuell zuweisen"
+   
 
 outputs:
   # SYSTEM PFLICHTFELDER (Hidden)
@@ -145,9 +148,7 @@ outputs:
     sensitive: true
     display: false
 
-estimated_costs:
-  hourly: "0.15 - 0.35 EUR"
-  monthly: "110 - 250 EUR"
+
 
 requirements:
   - "SSH Port 22"
